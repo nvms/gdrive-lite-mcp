@@ -1,18 +1,22 @@
 #!/usr/bin/env node
-// gdrive-lite-mcp: read-only Google Drive for agents. `npx gdrive-lite-mcp
-// auth` signs in once; run without arguments it is an MCP server on stdio.
+// gdrive-lite-mcp: read-only Google Drive for agents. See README.md for signing in;
+// run with --account <name> it is an MCP server on stdio.
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
-import { signIn } from './auth.js'
+import { command, signIn, useAccount } from './auth.js'
 import { download, read, search } from './drive.js'
 
 const VERSION = '0.1.0'
 
-if (process.argv[2] === 'auth') {
-  signIn().then(() => process.exit(0), (error) => { console.error(error.message); process.exit(1) })
+const cli = command(process.argv.slice(2))
+const fail = (error) => { console.error(error.message); process.exit(1) }
+
+if (cli.auth) {
+  await signIn(cli).then(() => process.exit(0), fail)
 } else {
+  await useAccount(cli.account).catch(fail)
   const server = new McpServer({ name: 'gdrive-lite-mcp', version: VERSION })
   const answer = (fn) => async (args) => {
     try {
