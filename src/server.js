@@ -34,8 +34,11 @@ if (process.argv[2] === 'auth') {
   }, answer(({ text, query, max, page_token }) => search({ text, query, max, pageToken: page_token })))
 
   server.registerTool('read', {
-    description: 'A file\'s contents as text: a Google Doc as Markdown, a Sheet\'s first sheet as CSV, Slides as plain text, or a text file as it is. Other files, like PDFs, are for download.',
-    inputSchema: { id: z.string().describe('the file id from search') },
+    description: 'A file\'s contents as text: a Google Doc as Markdown, a Sheet\'s first sheet as CSV, Slides as plain text, or a text file as it is. Other files, like PDFs, are for download. Long files come 50,000 characters at a time; pass next_offset for the rest.',
+    inputSchema: {
+      id: z.string().describe('the file id from search'),
+      offset: z.number().int().min(0).optional().describe('where to continue from: next_offset from the previous read'),
+    },
     annotations: { readOnlyHint: true, openWorldHint: true },
   }, answer(read))
 

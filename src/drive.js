@@ -57,14 +57,18 @@ export async function search({ text, query, max = 20, pageToken }) {
 
 const meta = (id) => json(`/files/${id}`, { fields: FIELDS, supportsAllDrives: true })
 
-export async function read({ id }) {
+const PAGE = 50000
+
+export async function read({ id, offset = 0 }) {
   const file = await meta(id)
   const native = NATIVE[file.mimeType]
   let response
   if (native) response = await request(`/files/${id}/export`, { mimeType: native.text })
   else if (/^text\/|json$|xml$/.test(file.mimeType)) response = await request(`/files/${id}`, { alt: 'media', supportsAllDrives: true })
   else throw new Error(`${file.name} is a ${file.mimeType} file, which has no text to read here; download it instead`)
-  return { ...view(file), text: await response.text() }
+  const text = await response.text()
+  const end = Math.min(text.length, offset + PAGE)
+  return { ...view(file), text: text.slice(offset, end), length: text.length, next_offset: end < text.length ? end : null }
 }
 
 // a name not yet taken in the folder: a number is added rather than overwriting
